@@ -20,6 +20,9 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::sampler::{Sampler, SampleTile};
 
+/// Stratified sampler.
+///
+/// A stratified sampler generates evenly spaced samples in a grid (unless `jitter` is `true`, in which case the samples will not be evenly spaced).
 #[derive(Clone, PartialEq, Debug)]
 pub struct StratifiedSampler {
     sample_count_x: u32,
@@ -31,6 +34,7 @@ pub struct StratifiedSampler {
     jitter: bool,
 }
 
+/// Iterator over tiles produced by a stratified sampler.
 #[derive(Clone, PartialEq, Debug)]
 pub struct StratifiedSampleTileIterator {
     sample_count_x: u32,
@@ -47,6 +51,7 @@ pub struct StratifiedSampleTileIterator {
     jitter: bool,
 }
 
+/// Implementation of `SampleTile` for a stratified sampler.
 #[derive(Clone, Debug)]
 pub struct StratifiedSampleTile {
     start_x: u32,
@@ -67,6 +72,11 @@ pub struct StratifiedSampleTile {
 // ===== StratifiedSampler =====================================================================================================================================
 
 impl StratifiedSampler {
+    /// Creates a new stratified sampler which will generate `sample_count_x` samples in the x direction and `sample_count_y` samples in the y direction.
+    ///
+    /// If `jitter` is `false`, the samples will be evenly spaced on the center points of the 'pixels' that are sampled.
+    ///
+    /// If `jitter` is `true`, the samples will be randomly placed in the square of each 'pixel' that is sampled. This can help reduce aliasing effects.
     pub fn new(sample_count_x: u32, sample_count_y: u32, jitter: bool) -> StratifiedSampler {
         assert!(sample_count_x > 0, "sample_count_x must be greater than zero");
         assert!(sample_count_y > 0, "sample_count_y must be greater than zero");

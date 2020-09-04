@@ -14,6 +14,7 @@
 
 use crate::filter::Filter;
 
+/// Triangle filter.
 #[derive(Clone, PartialEq, Debug)]
 pub struct TriangleFilter {
     radius_x: f32,

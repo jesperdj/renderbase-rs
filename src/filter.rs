@@ -24,8 +24,11 @@ mod gaussian;
 mod mitchell;
 mod lanczos_sinc;
 
+/// Sampling reconstruction filter.
 pub trait Filter {
+    /// Returns the radius of the filter in the x and y direction.
     fn radius(&self) -> (f32, f32);
 
+    /// Evaluates the filter at the point (x, y).
     fn evaluate(&self, x: f32, y: f32) -> f32;
 }

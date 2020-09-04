@@ -14,6 +14,7 @@
 
 use crate::filter::Filter;
 
+/// Box filter.
 #[derive(Clone, PartialEq, Debug)]
 pub struct BoxFilter {
     radius_x: f32,

@@ -14,6 +14,7 @@
 
 use crate::filter::Filter;
 
+/// Mitchell-Netravali filter.
 #[derive(Clone, PartialEq, Debug)]
 pub struct MitchellFilter {
     radius_x: f32,

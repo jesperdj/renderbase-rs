@@ -14,6 +14,7 @@
 
 use crate::filter::Filter;
 
+/// Gaussian filter.
 #[derive(Clone, PartialEq, Debug)]
 pub struct GaussianFilter {
     radius_x: f32,
