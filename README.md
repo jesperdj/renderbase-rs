@@ -19,13 +19,13 @@ implementations of the render function.
 
 RenderBase also provides a `render()` function that executes the rendering process in a multi-threaded way.
 
-The result of calling `render()` is a raster of values. The type of the values is determined by the render function. It's up to the client application to
-convert this raster into the desired output, for example an image.
+The result of calling `render()` is a raster of values. The type of the values is determined by the render function supplied by the client application.
+It's up to the client application to convert this raster into the desired output, for example an image.
 
 RenderBase was mainly inspired by ideas from the book [Physically Based Rendering: From Theory to Implementation](https://pbrt.org/), especially the chapter
 about [sampling and reconstruction](http://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction.html).
 
-## Source code organization
+## Source code organization and documentation
 
 RenderBase contains four main modules (see [src/lib.rs](https://github.com/jesperdj/renderbase-rs/blob/master/src/lib.rs)):
 
@@ -48,6 +48,10 @@ There are five different reconstruction filter implementations, which correspond
 
 I prefer to use the `BoxFilter` for quick preview rendering with 1 sample per pixel, and the `MitchellFilter` for high-quality rendering with many samples per
 pixel.
+
+Generate Rustdoc documentation and open it in a browser with the command:
+
+    cargo rustdoc --open
 
 ## Examples
 
