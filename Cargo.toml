@@ -10,7 +10,6 @@ license-file = "LICENSE"
 
 [dependencies]
 log = "0.4.11"
-env_logger = "0.7.1"
 rand = "0.7.3"
 rand_xoshiro = "0.4.0"
 num_cpus = "1.13.0"
