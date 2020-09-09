@@ -56,8 +56,10 @@ pub fn render<S, T, I, R, V, F>(sampler: &S, render_fn: &R, filter: &F, width: u
     let (tile_count_x, tile_count_y) = (tile_count_x.round() as u32, tile_count_y.round() as u32);
 
     // Create channels
-    let (input_snd, input_rcv) = crossbeam_channel::bounded(tile_count);
-    let (output_snd, output_rcv) = crossbeam_channel::bounded(tile_count);
+    const INPUT_CHANNEL_CAPACITY: usize = 2048;
+    const OUTPUT_CHANNEL_CAPACITY: usize = 2048;
+    let (input_snd, input_rcv) = crossbeam_channel::bounded(INPUT_CHANNEL_CAPACITY);
+    let (output_snd, output_rcv) = crossbeam_channel::bounded(OUTPUT_CHANNEL_CAPACITY);
 
     thread::scope(|scope| {
         let start_time = Instant::now();
