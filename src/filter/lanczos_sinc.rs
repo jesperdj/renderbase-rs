@@ -15,7 +15,7 @@
 use crate::filter::Filter;
 
 /// Windowed sinc filter.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug)]
 pub struct LanczosSincFilter {
     radius_x: f32,
     radius_y: f32,
