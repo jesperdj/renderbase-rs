@@ -92,8 +92,8 @@ impl Rectangle {
     }
 
     pub fn linear_index(&self, x: u32, y: u32) -> usize {
-        assert!(x >= self.left && x < self.right, "invalid x index: {}", x);
-        assert!(y >= self.top && y < self.bottom, "invalid y index: {}", y);
+        assert!(x >= self.left && x < self.right, "invalid x index: {} (valid range is {}..{})", x, self.left, self.right);
+        assert!(y >= self.top && y < self.bottom, "invalid y index: {} (valid range is {}..{})", y, self.top, self.bottom);
 
         (y - self.top) as usize * self.width() as usize + (x - self.left) as usize
     }

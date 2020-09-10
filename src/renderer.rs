@@ -152,18 +152,21 @@ fn start_workers<'a, S, R, F>(scope: &Scope<'a>, worker_count: usize, output_rec
                     // Evaluate render function
                     let value = render_fn.evaluate(&sample);
 
+                    let sample_x = sample.pixel_x as f32 + sample.pixel_offset_x;
+                    let sample_y = sample.pixel_y as f32 + sample.pixel_offset_y;
+
                     // Determine which pixels in the raster need to be updated
-                    let start_px = f32::max((sample.pixel_x - radius_x).round(), tile_left as f32) as u32;
-                    let start_py = f32::max((sample.pixel_y - radius_y).round(), tile_top as f32) as u32;
-                    let end_px = f32::min((sample.pixel_x + radius_x).round(), tile_right as f32) as u32;
-                    let end_py = f32::min((sample.pixel_y + radius_y).round(), tile_bottom as f32) as u32;
+                    let start_px = f32::max((sample_x - radius_x).round(), tile_left as f32) as u32;
+                    let start_py = f32::max((sample_y - radius_y).round(), tile_top as f32) as u32;
+                    let end_px = f32::min((sample_x + radius_x).round(), tile_right as f32) as u32;
+                    let end_py = f32::min((sample_y + radius_y).round(), tile_bottom as f32) as u32;
 
                     // Update the relevant pixels
                     for py in start_py..end_py {
                         for px in start_px..end_px {
                             // Evaluate filter at this pixel's center
                             let (pixel_center_x, pixel_center_y) = (px as f32 + 0.5, py as f32 + 0.5);
-                            let weight = filter.evaluate(pixel_center_x - sample.pixel_x, pixel_center_y - sample.pixel_y);
+                            let weight = filter.evaluate(pixel_center_x - sample_x, pixel_center_y - sample_y);
 
                             // Update pixel with weighted value and weight
                             let element = tile_raster.get_mut(px, py);

@@ -151,9 +151,11 @@ impl Iterator for StratifiedSampleTile {
 
     fn next(&mut self) -> Option<PixelSample> {
         if self.py < self.tile_rectangle.bottom {
+            let (pixel_x, pixel_y) = (self.px, self.py);
+
             let (jitter_x, jitter_y) = if self.jitter { self.rng.gen() } else { (0.5, 0.5) };
-            let pixel_x = self.px as f32 + (self.sx as f32 + jitter_x) / self.sqrt_samples_per_pixel as f32;
-            let pixel_y = self.py as f32 + (self.sy as f32 + jitter_y) / self.sqrt_samples_per_pixel as f32;
+            let pixel_offset_x = (self.sx as f32 + jitter_x) / self.sqrt_samples_per_pixel as f32;
+            let pixel_offset_y = (self.sy as f32 + jitter_y) / self.sqrt_samples_per_pixel as f32;
 
             self.sx += 1;
             if self.sx >= self.sqrt_samples_per_pixel {
@@ -169,7 +171,7 @@ impl Iterator for StratifiedSampleTile {
                 }
             }
 
-            Some(PixelSample::new(pixel_x, pixel_y))
+            Some(PixelSample::new(pixel_x, pixel_y, pixel_offset_x, pixel_offset_y))
         } else {
             None
         }

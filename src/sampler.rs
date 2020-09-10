@@ -20,8 +20,10 @@ mod stratified;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct PixelSample {
-    pub pixel_x: f32,
-    pub pixel_y: f32,
+    pub pixel_x: u32,
+    pub pixel_y: u32,
+    pub pixel_offset_x: f32,
+    pub pixel_offset_y: f32,
 }
 
 pub trait Sampler {
@@ -40,7 +42,7 @@ pub trait SampleTile: Iterator<Item=PixelSample> {
 // ===== PixelSample ===========================================================================================================================================
 
 impl PixelSample {
-    pub fn new(pixel_x: f32, pixel_y: f32) -> PixelSample {
-        PixelSample { pixel_x, pixel_y }
+    pub fn new(pixel_x: u32, pixel_y: u32, pixel_offset_x: f32, pixel_offset_y: f32) -> PixelSample {
+        PixelSample { pixel_x, pixel_y, pixel_offset_x, pixel_offset_y }
     }
 }
