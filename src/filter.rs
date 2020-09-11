@@ -25,7 +25,7 @@ mod mitchell;
 mod lanczos_sinc;
 
 /// Sampling reconstruction filter.
-pub trait Filter {
+pub trait Filter: Send + Sync {
     /// Returns the radius of the filter in the x and y direction.
     fn radius(&self) -> (f32, f32);
 

@@ -26,8 +26,8 @@ pub struct PixelSample {
     sample_offset_y: f32,
 }
 
-pub trait Sampler {
-    type Tile: SampleTile + Send + Sync;
+pub trait Sampler: Send + Sync {
+    type Tile: SampleTile;
     type TileIter: Iterator<Item=Self::Tile>;
 
     fn rectangle(&self) -> &Rectangle;
@@ -35,7 +35,7 @@ pub trait Sampler {
     fn tiles(&self, tile_count_x: u32, tile_count_y: u32) -> Self::TileIter;
 }
 
-pub trait SampleTile: Iterator<Item=PixelSample> {
+pub trait SampleTile: Iterator<Item=PixelSample> + Send + Sync {
     fn rectangle(&self) -> &Rectangle;
 }
 
