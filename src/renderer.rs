@@ -152,8 +152,7 @@ fn start_workers<'a, S, R, F>(scope: &Scope<'a>, worker_count: usize, output_rec
                     // Evaluate render function
                     let value = render_fn.evaluate(&sample);
 
-                    let sample_x = sample.pixel_x as f32 + sample.pixel_offset_x;
-                    let sample_y = sample.pixel_y as f32 + sample.pixel_offset_y;
+                    let (sample_x, sample_y) = sample.sample();
 
                     // Determine which pixels in the raster need to be updated
                     let start_px = f32::max((sample_x - radius_x).round(), tile_left as f32) as u32;
