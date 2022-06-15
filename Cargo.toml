@@ -12,9 +12,9 @@ license-file = "LICENSE"
 doctest = false
 
 [dependencies]
-log = "0.4.11"
-rand = "0.7.3"
-rand_xoshiro = "0.4.0"
-num_cpus = "1.13.0"
-crossbeam-channel = "0.4.3"
-crossbeam-utils = "0.7.2"
+log = "0.4.17"
+rand = "0.8.5"
+rand_xoshiro = "0.6.0"
+num_cpus = "1.13.1"
+crossbeam-channel = "0.5.4"
+crossbeam-utils = "0.8.8"
