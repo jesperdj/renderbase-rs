@@ -53,8 +53,8 @@ pub struct IndependentSamplerTile {
 
 impl IndependentSampler {
     #[inline]
-    pub fn new(rectangle: &Rectangle, samples_per_pixel: u32, jitter: bool) -> IndependentSampler {
-        IndependentSampler { rectangle: rectangle.clone(), samples_per_pixel, jitter }
+    pub fn new(rectangle: Rectangle, samples_per_pixel: u32, jitter: bool) -> IndependentSampler {
+        IndependentSampler { rectangle, samples_per_pixel, jitter }
     }
 }
 
@@ -173,7 +173,7 @@ mod test {
     #[test]
     fn independent_sampler() {
         let rect = Rectangle::new(10, 20, 22, 30);
-        let sampler = IndependentSampler::new(&rect, 2, true);
+        let sampler = IndependentSampler::new(rect, 2, true);
 
         let mut tile_count = 0;
         for tile in sampler.tiles(3, 2) {
