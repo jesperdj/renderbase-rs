@@ -15,6 +15,7 @@
 use std::ops::{Add, AddAssign, Div, Mul};
 
 pub use multithreaded::*;
+pub use simple::*;
 
 use crate::filter::Filter;
 use crate::raster::Raster;
