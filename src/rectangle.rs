@@ -110,12 +110,12 @@ impl Rectangle {
 
     #[inline]
     pub fn index_iter(&self) -> RectangleIndexIterator {
-        RectangleIndexIterator::new(&self)
+        RectangleIndexIterator::new(self.clone())
     }
 
     #[inline]
     pub fn tile_iter(&self, tile_count_x: u32, tile_count_y: u32) -> RectangleTileIterator {
-        RectangleTileIterator::new(&self, tile_count_x, tile_count_y)
+        RectangleTileIterator::new(self.clone(), tile_count_x, tile_count_y)
     }
 
     #[inline]
@@ -130,11 +130,11 @@ impl Rectangle {
 // ===== RectangleIndexIterator ================================================================================================================================
 
 impl RectangleIndexIterator {
-    fn new(rectangle: &Rectangle) -> RectangleIndexIterator {
+    fn new(rectangle: Rectangle) -> RectangleIndexIterator {
         let index_x = rectangle.left;
         let index_y = if rectangle.right > rectangle.left { rectangle.top } else { rectangle.bottom };
 
-        RectangleIndexIterator { rectangle: rectangle.clone(), index_x, index_y }
+        RectangleIndexIterator { rectangle, index_x, index_y }
     }
 }
 
@@ -177,7 +177,7 @@ impl FusedIterator for RectangleIndexIterator {}
 
 impl RectangleTileIterator {
     #[inline]
-    fn new(rectangle: &Rectangle, tile_count_x: u32, tile_count_y: u32) -> RectangleTileIterator {
+    fn new(rectangle: Rectangle, tile_count_x: u32, tile_count_y: u32) -> RectangleTileIterator {
         debug_assert!(tile_count_x > 0, "tile_count_x must be greater than zero but {} < 0", tile_count_x);
         debug_assert!(tile_count_y > 0, "tile_count_y must be greater than zero but {} < 0", tile_count_y);
 
@@ -185,15 +185,9 @@ impl RectangleTileIterator {
         let tile_count_x = min(tile_count_x, rectangle.width());
         let tile_count_y = min(tile_count_y, rectangle.height());
 
-        RectangleTileIterator {
-            rectangle: rectangle.clone(),
-            tile_count_x,
-            tile_count_y,
-            tile_index_x: 0,
-            tile_index_y: 0,
-            tile_left: rectangle.left,
-            tile_top: rectangle.top,
-        }
+        let (tile_left, tile_top) = (rectangle.left, rectangle.top);
+
+        RectangleTileIterator { rectangle, tile_count_x, tile_count_y, tile_index_x: 0, tile_index_y: 0, tile_left, tile_top }
     }
 }
 
