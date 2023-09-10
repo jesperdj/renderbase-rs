@@ -20,7 +20,6 @@ use crossbeam_utils::thread::Scope;
 
 use crate::filter::Filter;
 use crate::raster::Raster;
-use crate::rectangle::Rectangle;
 use crate::renderer::{Renderer, RenderFunction};
 use crate::sampler::{Sampler, SamplerTile};
 
@@ -61,14 +60,10 @@ impl MultiThreadedRenderer {
     }
 
     fn start_workers<'a, S: Sampler, R: RenderFunction, F: Filter>(
-        &self, scope: &Scope<'a>, output_rectangle: &'a Rectangle, render_fn: &'a R, filter: &'a F,
-        receiver: &Receiver<S::Tile>, sender: &Sender<Raster<(R::Value, f32)>>)
+        &self, scope: &Scope<'a>, render_fn: &'a R, filter: &'a F, receiver: &Receiver<S::Tile>, sender: &Sender<Raster<(R::Value, f32)>>)
         where
             <S as Sampler>::Tile: 'a
     {
-        let (min_left, min_top) = (output_rectangle.left as f32, output_rectangle.top as f32);
-        let (max_right, max_bottom) = (output_rectangle.right as f32, output_rectangle.bottom as f32);
-
         log::info!("Starting {} worker threads", self.worker_count);
         for id in 1..=self.worker_count {
             let receiver = receiver.clone();
@@ -131,7 +126,7 @@ impl Renderer for MultiThreadedRenderer {
 
             // Start sample generator and worker threads
             self.start_sample_generator(scope, sampler, tile_count_dim, tile_count_dim, &input_snd);
-            self.start_workers::<S, R, F>(scope, &sampler.rectangle(), render_fn, filter, &input_rcv, &output_snd);
+            self.start_workers::<S, R, F>(scope, render_fn, filter, &input_rcv, &output_snd);
 
             // Disconnect channels used by sample generator and worker threads from the main thread
             drop(input_snd);
