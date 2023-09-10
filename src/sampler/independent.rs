@@ -25,12 +25,14 @@ use crate::sampler::{PixelSample, Sampler, SamplerTile};
 pub struct IndependentSampler {
     rectangle: Rectangle,
     samples_per_pixel: u32,
+    jitter: bool,
 }
 
 #[derive(Clone, Debug)]
 pub struct IndependentSamplerTileIterator {
     rect_iter: RectangleTileIterator,
     samples_per_pixel: u32,
+    jitter: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -43,6 +45,7 @@ pub struct IndependentSamplerTile {
     pixel_x: u32,
     pixel_y: u32,
 
+    jitter: bool,
     rng: Xoshiro128Plus,
 }
 
@@ -50,8 +53,8 @@ pub struct IndependentSamplerTile {
 
 impl IndependentSampler {
     #[inline]
-    pub fn new(rectangle: &Rectangle, samples_per_pixel: u32) -> IndependentSampler {
-        IndependentSampler { rectangle: rectangle.clone(), samples_per_pixel }
+    pub fn new(rectangle: &Rectangle, samples_per_pixel: u32, jitter: bool) -> IndependentSampler {
+        IndependentSampler { rectangle: rectangle.clone(), samples_per_pixel, jitter }
     }
 }
 
@@ -66,7 +69,7 @@ impl Sampler for IndependentSampler {
 
     #[inline]
     fn tiles(&self, tile_count_x: u32, tile_count_y: u32) -> IndependentSamplerTileIterator {
-        IndependentSamplerTileIterator::new(self.rectangle(), self.samples_per_pixel, tile_count_x, tile_count_y)
+        IndependentSamplerTileIterator::new(self.rectangle(), self.samples_per_pixel, tile_count_x, tile_count_y, self.jitter)
     }
 }
 
@@ -74,8 +77,8 @@ impl Sampler for IndependentSampler {
 
 impl IndependentSamplerTileIterator {
     #[inline]
-    fn new(sampler_rect: &Rectangle, samples_per_pixel: u32, tile_count_x: u32, tile_count_y: u32) -> IndependentSamplerTileIterator {
-        IndependentSamplerTileIterator { rect_iter: sampler_rect.tile_iter(tile_count_x, tile_count_y), samples_per_pixel }
+    fn new(sampler_rect: &Rectangle, samples_per_pixel: u32, tile_count_x: u32, tile_count_y: u32, jitter: bool) -> IndependentSamplerTileIterator {
+        IndependentSamplerTileIterator { rect_iter: sampler_rect.tile_iter(tile_count_x, tile_count_y), samples_per_pixel, jitter }
     }
 }
 
@@ -84,7 +87,7 @@ impl Iterator for IndependentSamplerTileIterator {
 
     fn next(&mut self) -> Option<IndependentSamplerTile> {
         self.rect_iter.next().map(|tile| {
-            IndependentSamplerTile::new(tile, self.samples_per_pixel)
+            IndependentSamplerTile::new(tile, self.samples_per_pixel, self.jitter)
         })
     }
 
@@ -101,7 +104,7 @@ impl FusedIterator for IndependentSamplerTileIterator {}
 // ===== IndependentSamplerTile ================================================================================================================================
 
 impl IndependentSamplerTile {
-    fn new(tile_rect: Rectangle, samples_per_pixel: u32) -> IndependentSamplerTile {
+    fn new(tile_rect: Rectangle, samples_per_pixel: u32, jitter: bool) -> IndependentSamplerTile {
         let tile_rect_iter = tile_rect.index_iter();
         let (pixel_x, pixel_y) = (tile_rect.left, tile_rect.top);
 
@@ -114,6 +117,7 @@ impl IndependentSamplerTile {
             pixel_x,
             pixel_y,
 
+            jitter,
             rng: Xoshiro128Plus::from_entropy(),
         }
     }
@@ -144,7 +148,7 @@ impl Iterator for IndependentSamplerTile {
 
         // Generate the next sample for the current pixel
         self.pixel_sample_count += 1;
-        let (sample_offset_x, sample_offset_y) = self.rng.gen();
+        let (sample_offset_x, sample_offset_y) = if self.jitter { self.rng.gen() } else { (0.5, 0.5) };
         Some(PixelSample::new(self.pixel_x, self.pixel_y, sample_offset_x, sample_offset_y))
     }
 
@@ -169,7 +173,7 @@ mod test {
     #[test]
     fn independent_sampler() {
         let rect = Rectangle::new(10, 20, 22, 30);
-        let sampler = IndependentSampler::new(&rect, 2);
+        let sampler = IndependentSampler::new(&rect, 2, true);
 
         let mut tile_count = 0;
         for tile in sampler.tiles(3, 2) {
