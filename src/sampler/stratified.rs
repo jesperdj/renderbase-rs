@@ -14,9 +14,7 @@
 
 use std::iter::FusedIterator;
 
-use rand::Rng;
-use rand_xoshiro::rand_core::SeedableRng;
-use rand_xoshiro::Xoshiro128Plus;
+use rand::{random, Rng};
 
 use crate::rectangle::{Rectangle, RectangleIndexIterator, RectangleTileIterator};
 use crate::sampler::{PixelSample, Sampler, SamplerTile};
@@ -47,7 +45,6 @@ pub struct StratifiedSamplerTile {
     stratum_y: u32,
 
     jitter: bool,
-    rng: Xoshiro128Plus,
 }
 
 // ===== StratifiedSampler =====================================================================================================================================
@@ -120,7 +117,6 @@ impl StratifiedSamplerTile {
             stratum_y: sqrt_samples_per_pixel, // So that the first time, we advance to the first pixel
 
             jitter,
-            rng: Xoshiro128Plus::from_entropy(),
         }
     }
 }
@@ -150,7 +146,7 @@ impl Iterator for StratifiedSamplerTile {
         }
 
         // Generate the next sample for the current pixel
-        let (jitter_x, jitter_y) = if self.jitter { self.rng.gen() } else { (0.5, 0.5) };
+        let (jitter_x, jitter_y) = if self.jitter { random() } else { (0.5, 0.5) };
         let sample_offset_x = (self.stratum_x as f32 + jitter_x) / self.sqrt_samples_per_pixel as f32;
         let sample_offset_y = (self.stratum_y as f32 + jitter_y) / self.sqrt_samples_per_pixel as f32;
 
