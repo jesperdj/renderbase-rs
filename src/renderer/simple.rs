@@ -37,8 +37,11 @@ impl Renderer for SimpleRenderer {
         log::info!("Start rendering");
         let start_time = Instant::now();
 
+        let mut sample_count = 0usize;
         for tile in sampler.tiles(1, 1) {
             for sample in tile {
+                sample_count += 1;
+
                 let value = render_fn.evaluate(&sample);
 
                 let (pixel_x, pixel_y) = sample.pixel();
@@ -54,6 +57,9 @@ impl Renderer for SimpleRenderer {
                 element.1 += weight;
             }
         }
+
+        let duration = Instant::now().duration_since(start_time).as_millis();
+        log::info!("Rendering finished, processed {} samples; run time: {} ms", sample_count, duration);
 
         // Convert weighted raster to final result
         log::info!("Converting raster");

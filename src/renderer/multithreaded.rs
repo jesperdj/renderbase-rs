@@ -85,15 +85,7 @@ impl MultiThreadedRenderer {
                 for tile in receiver {
                     tile_count += 1;
 
-                    let tile_rect = tile.rectangle();
-
-                    // Create tile raster with border the size of the filter radius and clip by output rectangle
-                    let tile_left = f32::max((tile_rect.left as f32 - radius_x).round(), min_left) as u32;
-                    let tile_top = f32::max((tile_rect.top as f32 - radius_y).round(), min_top) as u32;
-                    let tile_right = f32::min((tile_rect.right as f32 + radius_x).round(), max_right) as u32;
-                    let tile_bottom = f32::min((tile_rect.bottom as f32 + radius_y).round(), max_bottom) as u32;
-
-                    let mut tile_raster = Raster::<(R::Value, f32)>::new(Rectangle::new(tile_left, tile_top, tile_right, tile_bottom));
+                    let mut tile_raster = Raster::<(R::Value, f32)>::new(tile.rectangle().clone());
 
                     // For all samples in this tile, render and update the raster using the filter
                     for sample in tile {
@@ -102,27 +94,17 @@ impl MultiThreadedRenderer {
                         // Evaluate render function
                         let value = render_fn.evaluate(&sample);
 
+                        let (pixel_x, pixel_y) = sample.pixel();
                         let (sample_x, sample_y) = sample.sample();
 
-                        // Determine which pixels in the raster need to be updated
-                        let start_px = f32::max((sample_x - radius_x).round(), tile_left as f32) as u32;
-                        let start_py = f32::max((sample_y - radius_y).round(), tile_top as f32) as u32;
-                        let end_px = f32::min((sample_x + radius_x).round(), tile_right as f32) as u32;
-                        let end_py = f32::min((sample_y + radius_y).round(), tile_bottom as f32) as u32;
+                        // Evaluate filter at this pixel's center
+                        let (pixel_center_x, pixel_center_y) = (pixel_x as f32 + 0.5, pixel_y as f32 + 0.5);
+                        let weight = filter.evaluate(pixel_center_x - sample_x, pixel_center_y - sample_y);
 
-                        // Update the relevant pixels
-                        for py in start_py..end_py {
-                            for px in start_px..end_px {
-                                // Evaluate filter at this pixel's center
-                                let (pixel_center_x, pixel_center_y) = (px as f32 + 0.5, py as f32 + 0.5);
-                                let weight = filter.evaluate(pixel_center_x - sample_x, pixel_center_y - sample_y);
-
-                                // Update pixel with weighted value and weight
-                                let element = tile_raster.get_mut(px, py);
-                                element.0 += value * weight;
-                                element.1 += weight;
-                            }
-                        }
+                        // Update pixel with weighted value and weight
+                        let element = tile_raster.get_mut(pixel_x, pixel_y);
+                        element.0 += value * weight;
+                        element.1 += weight;
                     }
 
                     sender.send(tile_raster).unwrap();
