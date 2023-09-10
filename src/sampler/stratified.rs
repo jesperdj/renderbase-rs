@@ -18,40 +18,33 @@ use rand::Rng;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro128Plus;
 
-use crate::rectangle::Rectangle;
-use crate::sampler::{PixelSample, Sampler, SampleTile};
+use crate::rectangle::{Rectangle, RectangleIndexIterator, RectangleTileIterator};
+use crate::sampler::{PixelSample, Sampler, SamplerTile};
 
 #[derive(Clone, Debug)]
 pub struct StratifiedSampler {
     rectangle: Rectangle,
     sqrt_samples_per_pixel: u32,
-
     jitter: bool,
 }
 
 #[derive(Clone, Debug)]
-pub struct StratifiedSampleTileIterator {
-    sampler_rectangle: Rectangle,
+pub struct StratifiedSamplerTileIterator {
+    rect_iter: RectangleTileIterator,
     sqrt_samples_per_pixel: u32,
-
-    tile_width: u32,
-    tile_height: u32,
-
-    tile_left: u32,
-    tile_top: u32,
-
     jitter: bool,
 }
 
 #[derive(Clone, Debug)]
-pub struct StratifiedSampleTile {
-    tile_rectangle: Rectangle,
+pub struct StratifiedSamplerTile {
+    tile_rect: Rectangle,
+    tile_rect_iter: RectangleIndexIterator,
     sqrt_samples_per_pixel: u32,
 
-    px: u32,
-    py: u32,
-    sx: u32,
-    sy: u32,
+    pixel_x: u32,
+    pixel_y: u32,
+    stratum_x: u32,
+    stratum_y: u32,
 
     jitter: bool,
     rng: Xoshiro128Plus,
@@ -60,122 +53,156 @@ pub struct StratifiedSampleTile {
 // ===== StratifiedSampler =====================================================================================================================================
 
 impl StratifiedSampler {
+    #[inline]
     pub fn new(rectangle: Rectangle, sqrt_samples_per_pixel: u32, jitter: bool) -> StratifiedSampler {
         StratifiedSampler { rectangle, sqrt_samples_per_pixel, jitter }
     }
 }
 
 impl Sampler for StratifiedSampler {
-    type Tile = StratifiedSampleTile;
-    type TileIter = StratifiedSampleTileIterator;
+    type Tile = StratifiedSamplerTile;
+    type TileIter = StratifiedSamplerTileIterator;
 
+    #[inline]
     fn rectangle(&self) -> &Rectangle {
         &self.rectangle
     }
 
-    fn tiles(&self, tile_count_x: u32, tile_count_y: u32) -> StratifiedSampleTileIterator {
-        assert!(tile_count_x > 0, "tile_count_x must be greater than zero");
-        assert!(tile_count_x <= self.rectangle.width(),
-                "tile_count_x must be less than or equal to rectangle width, but {} > {}", tile_count_x, self.rectangle.width());
-        assert!(tile_count_y > 0, "tile_count_y must be greater than zero");
-        assert!(tile_count_y <= self.rectangle.height(),
-                "tile_count_y must be less than or equal to rectangle height, but {} > {}", tile_count_y, self.rectangle.height());
-
-        StratifiedSampleTileIterator::new(&self.rectangle, self.sqrt_samples_per_pixel, tile_count_x, tile_count_y, self.jitter)
+    #[inline]
+    fn tiles(&self, tile_count_x: u32, tile_count_y: u32) -> StratifiedSamplerTileIterator {
+        StratifiedSamplerTileIterator::new(&self.rectangle, self.sqrt_samples_per_pixel, tile_count_x, tile_count_y, self.jitter)
     }
 }
 
-// ===== StratifiedSampleTileIterator ==========================================================================================================================
+// ===== StratifiedSamplerTileIterator =========================================================================================================================
 
-impl StratifiedSampleTileIterator {
-    fn new(sampler_rectangle: &Rectangle, sqrt_samples_per_pixel: u32, tile_count_x: u32, tile_count_y: u32, jitter: bool) -> StratifiedSampleTileIterator {
-        let sampler_rectangle = sampler_rectangle.clone();
-
-        // Determine tile size so that tile_width, _height times tile_count_x, _y is always >= total width, height
-        let tile_width = (sampler_rectangle.width() - 1) / tile_count_x + 1;
-        let tile_height = (sampler_rectangle.height() - 1) / tile_count_y + 1;
-
-        let tile_left = sampler_rectangle.left;
-        let tile_top = sampler_rectangle.top;
-
-        StratifiedSampleTileIterator { sampler_rectangle, sqrt_samples_per_pixel, tile_width, tile_height, tile_left, tile_top, jitter }
+impl StratifiedSamplerTileIterator {
+    #[inline]
+    fn new(sampler_rect: &Rectangle, sqrt_samples_per_pixel: u32, tile_count_x: u32, tile_count_y: u32, jitter: bool) -> StratifiedSamplerTileIterator {
+        StratifiedSamplerTileIterator { rect_iter: sampler_rect.tile_iter(tile_count_x, tile_count_y), sqrt_samples_per_pixel, jitter }
     }
 }
 
-impl Iterator for StratifiedSampleTileIterator {
-    type Item = StratifiedSampleTile;
+impl Iterator for StratifiedSamplerTileIterator {
+    type Item = StratifiedSamplerTile;
 
-    fn next(&mut self) -> Option<StratifiedSampleTile> {
-        if self.tile_top < self.sampler_rectangle.bottom {
-            let tile_right = u32::min(self.tile_left + self.tile_width, self.sampler_rectangle.right);
-            let tile_bottom = u32::min(self.tile_top + self.tile_height, self.sampler_rectangle.bottom);
-            let tile_rectangle = Rectangle::new(self.tile_left, self.tile_top, tile_right, tile_bottom);
+    fn next(&mut self) -> Option<StratifiedSamplerTile> {
+        self.rect_iter.next().map(|tile| {
+            StratifiedSamplerTile::new(tile, self.sqrt_samples_per_pixel, self.jitter)
+        })
+    }
 
-            let tile = StratifiedSampleTile::new(tile_rectangle, self.sqrt_samples_per_pixel, self.jitter);
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.rect_iter.size_hint()
+    }
+}
 
-            self.tile_left = tile_right;
-            if self.tile_left >= self.sampler_rectangle.right {
-                self.tile_left = self.sampler_rectangle.left;
-                self.tile_top = tile_bottom;
-            }
+impl ExactSizeIterator for StratifiedSamplerTileIterator {}
 
-            Some(tile)
-        } else {
-            None
+impl FusedIterator for StratifiedSamplerTileIterator {}
+
+// ===== StratifiedSamplerTile =================================================================================================================================
+
+impl StratifiedSamplerTile {
+    fn new(tile_rect: Rectangle, sqrt_samples_per_pixel: u32, jitter: bool) -> StratifiedSamplerTile {
+        let tile_rect_iter = tile_rect.index_iter();
+        let (pixel_x, pixel_y) = (tile_rect.left, tile_rect.top);
+
+        StratifiedSamplerTile {
+            tile_rect,
+            tile_rect_iter,
+            sqrt_samples_per_pixel,
+
+            pixel_x,
+            pixel_y,
+            stratum_x: 0,
+            stratum_y: sqrt_samples_per_pixel, // So that the first time, we advance to the first pixel
+
+            jitter,
+            rng: Xoshiro128Plus::from_entropy(),
         }
     }
 }
 
-impl FusedIterator for StratifiedSampleTileIterator {}
-
-// ===== StratifiedSampleTile ==================================================================================================================================
-
-impl StratifiedSampleTile {
-    fn new(tile_rectangle: Rectangle, sqrt_samples_per_pixel: u32, jitter: bool) -> StratifiedSampleTile {
-        let (px, py) = (tile_rectangle.left, if !tile_rectangle.is_empty() { tile_rectangle.top } else { tile_rectangle.bottom });
-        let (sx, sy) = (0, 0);
-        let rng = Xoshiro128Plus::from_entropy();
-
-        StratifiedSampleTile { tile_rectangle, sqrt_samples_per_pixel, px, py, sx, sy, jitter, rng }
-    }
-}
-
-impl SampleTile for StratifiedSampleTile {
+impl SamplerTile for StratifiedSamplerTile {
+    #[inline]
     fn rectangle(&self) -> &Rectangle {
-        &self.tile_rectangle
+        &self.tile_rect
     }
 }
 
-impl Iterator for StratifiedSampleTile {
+impl Iterator for StratifiedSamplerTile {
     type Item = PixelSample;
 
     fn next(&mut self) -> Option<PixelSample> {
-        if self.py < self.tile_rectangle.bottom {
-            let (pixel_x, pixel_y) = (self.px, self.py);
-
-            let (jitter_x, jitter_y) = if self.jitter { self.rng.gen() } else { (0.5, 0.5) };
-            let sample_offset_x = (self.sx as f32 + jitter_x) / self.sqrt_samples_per_pixel as f32;
-            let sample_offset_y = (self.sy as f32 + jitter_y) / self.sqrt_samples_per_pixel as f32;
-
-            self.sx += 1;
-            if self.sx >= self.sqrt_samples_per_pixel {
-                self.sx = 0;
-                self.sy += 1;
-                if self.sy >= self.sqrt_samples_per_pixel {
-                    self.sy = 0;
-                    self.px += 1;
-                    if self.px >= self.tile_rectangle.right {
-                        self.px = self.tile_rectangle.left;
-                        self.py += 1;
-                    }
-                }
+        if self.stratum_y >= self.sqrt_samples_per_pixel {
+            if let Some((px, py)) = self.tile_rect_iter.next() {
+                // Advance to the next pixel in the tile
+                self.pixel_x = px;
+                self.pixel_y = py;
+                self.stratum_x = 0;
+                self.stratum_y = 0;
+            } else {
+                // No more pixels
+                return None;
             }
-
-            Some(PixelSample::new(pixel_x, pixel_y, sample_offset_x, sample_offset_y))
-        } else {
-            None
         }
+
+        // Generate the next sample for the current pixel
+        let (jitter_x, jitter_y) = if self.jitter { self.rng.gen() } else { (0.5, 0.5) };
+        let sample_offset_x = (self.stratum_x as f32 + jitter_x) / self.sqrt_samples_per_pixel as f32;
+        let sample_offset_y = (self.stratum_y as f32 + jitter_y) / self.sqrt_samples_per_pixel as f32;
+
+        self.stratum_x += 1;
+        if self.stratum_x >= self.sqrt_samples_per_pixel {
+            self.stratum_x = 0;
+            self.stratum_y += 1;
+        }
+
+        Some(PixelSample::new(self.pixel_x, self.pixel_y, sample_offset_x, sample_offset_y))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (pixels_remaining, _) = self.tile_rect_iter.size_hint();
+        let samples_per_pixel = self.sqrt_samples_per_pixel * self.sqrt_samples_per_pixel;
+        let pixel_sample_count = self.stratum_y * self.sqrt_samples_per_pixel + self.stratum_x;
+        let remaining = pixels_remaining * samples_per_pixel as usize + (samples_per_pixel - pixel_sample_count) as usize;
+
+        (remaining, Some(remaining))
     }
 }
 
-impl FusedIterator for StratifiedSampleTile {}
+impl ExactSizeIterator for StratifiedSamplerTile {}
+
+impl FusedIterator for StratifiedSamplerTile {}
+
+// ===== Tests =================================================================================================================================================
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn stratified_sampler() {
+        let rect = Rectangle::new(10, 20, 22, 30);
+        let sampler = StratifiedSampler::new(rect, 2, true);
+
+        let mut tile_count = 0;
+        for tile in sampler.tiles(3, 2) {
+            println!("***** tile: {:?}", tile.tile_rect);
+            tile_count += 1;
+
+            let mut sample_count = 0;
+            for sample in tile {
+                println!("  --- sample: {:?}", sample);
+                sample_count += 1;
+            }
+
+            // Total rect size is 12 * 10, 4 samples per pixel, divided by 6 tiles
+            assert_eq!(sample_count, 12 * 10 * 4 / 6, "wrong number of samples in tile");
+        }
+
+        assert_eq!(tile_count, 6, "wrong number of tiles");
+    }
+}

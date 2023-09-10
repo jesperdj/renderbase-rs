@@ -24,21 +24,73 @@ pub struct TriangleFilter {
 // ===== TriangleFilter ========================================================================================================================================
 
 impl TriangleFilter {
+    #[inline]
     pub fn new(radius_x: f32, radius_y: f32) -> TriangleFilter {
         TriangleFilter { radius_x, radius_y }
     }
 
+    #[inline]
     pub fn with_defaults() -> TriangleFilter {
         TriangleFilter::new(2.0, 2.0)
     }
 }
 
 impl Filter for TriangleFilter {
+    #[inline]
     fn radius(&self) -> (f32, f32) {
         (self.radius_x, self.radius_y)
     }
 
+    #[inline]
     fn evaluate(&self, x: f32, y: f32) -> f32 {
         f32::max(0.0, self.radius_x - x.abs()) * f32::max(0.0, self.radius_y - y.abs())
+    }
+}
+
+// ===== Tests =================================================================================================================================================
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn triangle_filter_new() {
+        let filter = TriangleFilter::new(1.0, 0.5);
+        assert_eq!(filter.radius_x, 1.0, "radius_x is incorrect");
+        assert_eq!(filter.radius_y, 0.5, "radius_y is incorrect");
+    }
+
+    #[test]
+    fn triangle_filter_with_defaults() {
+        let filter = TriangleFilter::with_defaults();
+        assert_eq!(filter.radius_x, 2.0, "radius_x is incorrect");
+        assert_eq!(filter.radius_y, 2.0, "radius_y is incorrect");
+    }
+
+    #[test]
+    fn triangle_filter_radius() {
+        let filter = TriangleFilter::new(1.0, 0.5);
+        assert_eq!(filter.radius(), (1.0, 0.5), "radius() is incorrect");
+    }
+
+    #[test]
+    fn triangle_filter_evaluate() {
+        let filter = TriangleFilter::new(1.0, 0.5);
+        assert_eq!(filter.evaluate(0.0, 0.0), 0.5);
+    }
+
+    #[test]
+    fn triangle_filter_evaluate_zero_outside_radius() {
+        let filter = TriangleFilter::new(1.0, 0.5);
+        assert_eq!(filter.evaluate(-1.001, 0.0), 0.0);
+        assert_eq!(filter.evaluate(1.001, 0.0), 0.0);
+        assert_eq!(filter.evaluate(0.0, -0.501), 0.0);
+        assert_eq!(filter.evaluate(0.0, 0.501), 0.0);
+    }
+
+    #[test]
+    fn triangle_filter_is_debug() {
+        let filter = TriangleFilter::with_defaults();
+        println!("{:?}", filter);
     }
 }

@@ -21,6 +21,7 @@ use crate::raster::Raster;
 use crate::sampler::{PixelSample, Sampler};
 
 mod multithreaded;
+mod simple;
 
 pub trait RenderFunction: Send + Sync {
     type Value: Copy + Default + Add<Output=Self::Value> + AddAssign + Mul<f32, Output=Self::Value> + Div<f32, Output=Self::Value> + Send + Sync;

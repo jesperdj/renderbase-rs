@@ -22,12 +22,14 @@ use crate::filter::Filter;
 use crate::raster::Raster;
 use crate::rectangle::Rectangle;
 use crate::renderer::{Renderer, RenderFunction};
-use crate::sampler::{Sampler, SampleTile};
+use crate::sampler::{Sampler, SamplerTile};
 
 pub struct MultiThreadedRenderer {
     worker_count: usize,
     tiles_per_worker: usize,
 }
+
+// ===== MultiThreadedRenderer =================================================================================================================================
 
 impl MultiThreadedRenderer {
     const DEFAULT_TILES_PER_WORKER: usize = 24;
@@ -167,9 +169,7 @@ impl Renderer for MultiThreadedRenderer {
 
             // Convert weighted raster to final result
             log::info!("Converting raster");
-            let raster = raster.map(|(value, weight): (R::Value, f32)| {
-                if weight != 0.0 { value / weight } else { R::Value::default() }
-            });
+            let raster = raster.map(|(value, weight): (R::Value, f32)| { if weight != 0.0 { value / weight } else { R::Value::default() } });
 
             let duration = Instant::now().duration_since(start_time).as_millis();
             log::info!("Rendering finished, run time: {} ms", duration);

@@ -16,6 +16,7 @@ pub use stratified::*;
 
 use crate::rectangle::Rectangle;
 
+mod independent;
 mod stratified;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -27,7 +28,7 @@ pub struct PixelSample {
 }
 
 pub trait Sampler: Send + Sync {
-    type Tile: SampleTile;
+    type Tile: SamplerTile;
     type TileIter: Iterator<Item=Self::Tile>;
 
     fn rectangle(&self) -> &Rectangle;
@@ -35,26 +36,39 @@ pub trait Sampler: Send + Sync {
     fn tiles(&self, tile_count_x: u32, tile_count_y: u32) -> Self::TileIter;
 }
 
-pub trait SampleTile: Iterator<Item=PixelSample> + Send + Sync {
+pub trait SamplerTile: Iterator<Item=PixelSample> + Send + Sync {
     fn rectangle(&self) -> &Rectangle;
 }
 
 // ===== PixelSample ===========================================================================================================================================
 
 impl PixelSample {
+    #[inline]
     pub fn new(pixel_x: u32, pixel_y: u32, sample_offset_x: f32, sample_offset_y: f32) -> PixelSample {
         PixelSample { pixel_x, pixel_y, sample_offset_x, sample_offset_y }
     }
 
+    #[inline]
     pub fn pixel(&self) -> (u32, u32) {
         (self.pixel_x, self.pixel_y)
     }
 
+    #[inline]
     pub fn sample_offset(&self) -> (f32, f32) {
         (self.sample_offset_x, self.sample_offset_y)
     }
 
+    #[inline]
     pub fn sample(&self) -> (f32, f32) {
         (self.pixel_x as f32 + self.sample_offset_x, self.pixel_y as f32 + self.sample_offset_y)
     }
+}
+
+// ===== Tests =================================================================================================================================================
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+// TODO: Write tests.
 }

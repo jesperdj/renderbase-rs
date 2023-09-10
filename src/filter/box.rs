@@ -24,21 +24,77 @@ pub struct BoxFilter {
 // ===== BoxFilter =============================================================================================================================================
 
 impl BoxFilter {
+    #[inline]
     pub fn new(radius_x: f32, radius_y: f32) -> BoxFilter {
         BoxFilter { radius_x, radius_y }
     }
 
+    #[inline]
     pub fn with_defaults() -> BoxFilter {
         BoxFilter::new(0.5, 0.5)
     }
 }
 
 impl Filter for BoxFilter {
+    #[inline]
     fn radius(&self) -> (f32, f32) {
         (self.radius_x, self.radius_y)
     }
 
-    fn evaluate(&self, _x: f32, _y: f32) -> f32 {
-        1.0
+    #[inline]
+    fn evaluate(&self, x: f32, y: f32) -> f32 {
+        if x.abs() <= self.radius_x && y.abs() <= self.radius_y { 1.0 } else { 0.0 }
+    }
+}
+
+// ===== Tests =================================================================================================================================================
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn box_filter_new() {
+        let filter = BoxFilter::new(1.0, 2.0);
+        assert_eq!(filter.radius_x, 1.0, "radius_x is incorrect");
+        assert_eq!(filter.radius_y, 2.0, "radius_y is incorrect");
+    }
+
+    #[test]
+    fn box_filter_with_defaults() {
+        let filter = BoxFilter::with_defaults();
+        assert_eq!(filter.radius_x, 0.5, "radius_x is incorrect");
+        assert_eq!(filter.radius_y, 0.5, "radius_y is incorrect");
+    }
+
+    #[test]
+    fn box_filter_radius() {
+        let filter = BoxFilter::new(1.0, 2.0);
+        assert_eq!(filter.radius(), (1.0, 2.0), "radius() is incorrect");
+    }
+
+    #[test]
+    fn box_filter_evaluate() {
+        let filter = BoxFilter::new(1.0, 2.0);
+        assert_eq!(filter.evaluate(0.0, 0.0), 1.0);
+        assert_eq!(filter.evaluate(-1.0, 0.0), 1.0);
+        assert_eq!(filter.evaluate(1.0, 0.0), 1.0);
+        assert_eq!(filter.evaluate(0.0, -2.0), 1.0);
+        assert_eq!(filter.evaluate(0.0, 2.0), 1.0);
+    }
+
+    #[test]
+    fn box_filter_evaluate_zero_outside_radius() {
+        let filter = BoxFilter::new(1.0, 2.0);
+        assert_eq!(filter.evaluate(-1.001, 0.0), 0.0);
+        assert_eq!(filter.evaluate(1.001, 0.0), 0.0);
+        assert_eq!(filter.evaluate(0.0, -2.001), 0.0);
+        assert_eq!(filter.evaluate(0.0, 2.001), 0.0);
+    }
+
+    #[test]
+    fn box_filter_is_debug() {
+        let filter = BoxFilter::with_defaults();
+        println!("{:?}", filter);
     }
 }
