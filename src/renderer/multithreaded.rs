@@ -78,8 +78,6 @@ impl MultiThreadedRenderer {
                 log::info!("[{:02}] Worker thread started", id);
                 let start_time = Instant::now();
 
-                let (radius_x, radius_y) = filter.radius();
-
                 let mut tile_count = 0;
                 let mut sample_count = 0usize;
                 for tile in receiver {
