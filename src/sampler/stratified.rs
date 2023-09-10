@@ -16,7 +16,7 @@ use std::iter::FusedIterator;
 
 use rand::Rng;
 use rand_xoshiro::rand_core::SeedableRng;
-use rand_xoshiro::Xoshiro128Plus;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::rectangle::{Rectangle, RectangleIndexIterator, RectangleTileIterator};
 use crate::sampler::{PixelSample, Sampler, SamplerTile};
@@ -47,7 +47,7 @@ pub struct StratifiedSamplerTile {
     stratum_y: u32,
 
     jitter: bool,
-    rng: Xoshiro128Plus,
+    rng: Xoshiro256PlusPlus,
 }
 
 // ===== StratifiedSampler =====================================================================================================================================
@@ -120,7 +120,7 @@ impl StratifiedSamplerTile {
             stratum_y: sqrt_samples_per_pixel, // So that the first time, we advance to the first pixel
 
             jitter,
-            rng: Xoshiro128Plus::from_entropy(),
+            rng: Xoshiro256PlusPlus::from_entropy(),
         }
     }
 }

@@ -16,7 +16,7 @@ use std::iter::FusedIterator;
 
 use rand::Rng;
 use rand_xoshiro::rand_core::SeedableRng;
-use rand_xoshiro::Xoshiro128Plus;
+use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::rectangle::{Rectangle, RectangleIndexIterator, RectangleTileIterator};
 use crate::sampler::{PixelSample, Sampler, SamplerTile};
@@ -46,7 +46,7 @@ pub struct IndependentSamplerTile {
     pixel_y: u32,
 
     jitter: bool,
-    rng: Xoshiro128Plus,
+    rng: Xoshiro256PlusPlus,
 }
 
 // ===== IndependentSampler ====================================================================================================================================
@@ -118,7 +118,7 @@ impl IndependentSamplerTile {
             pixel_y,
 
             jitter,
-            rng: Xoshiro128Plus::from_entropy(),
+            rng: Xoshiro256PlusPlus::from_entropy(),
         }
     }
 }
