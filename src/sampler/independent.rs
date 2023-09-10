@@ -14,7 +14,9 @@
 
 use std::iter::FusedIterator;
 
-use rand::{random, Rng};
+use rand::Rng;
+use rand_xoshiro::rand_core::SeedableRng;
+use rand_xoshiro::Xoshiro128Plus;
 
 use crate::rectangle::{Rectangle, RectangleIndexIterator, RectangleTileIterator};
 use crate::sampler::{PixelSample, Sampler, SamplerTile};
@@ -44,6 +46,7 @@ pub struct IndependentSamplerTile {
     pixel_y: u32,
 
     jitter: bool,
+    rng: Xoshiro128Plus,
 }
 
 // ===== IndependentSampler ====================================================================================================================================
@@ -115,6 +118,7 @@ impl IndependentSamplerTile {
             pixel_y,
 
             jitter,
+            rng: Xoshiro128Plus::from_entropy(),
         }
     }
 }
@@ -144,7 +148,7 @@ impl Iterator for IndependentSamplerTile {
 
         // Generate the next sample for the current pixel
         self.pixel_sample_count += 1;
-        let (sample_offset_x, sample_offset_y) = if self.jitter { random() } else { (0.5, 0.5) };
+        let (sample_offset_x, sample_offset_y) = if self.jitter { self.rng.gen() } else { (0.5, 0.5) };
         Some(PixelSample::new(self.pixel_x, self.pixel_y, sample_offset_x, sample_offset_y))
     }
 
