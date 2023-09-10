@@ -32,7 +32,7 @@ pub struct MultiThreadedRenderer {
 // ===== MultiThreadedRenderer =================================================================================================================================
 
 impl MultiThreadedRenderer {
-    const DEFAULT_TILES_PER_WORKER: usize = 24;
+    const DEFAULT_TILES_PER_WORKER: usize = 32;
 
     pub fn new(worker_count: usize, tiles_per_worker: usize) -> MultiThreadedRenderer {
         MultiThreadedRenderer { worker_count, tiles_per_worker }

@@ -57,7 +57,9 @@ impl<T: Copy + Default> Raster<T> {
     pub fn merge<U: Copy + Default, F: FnMut(T, U) -> T>(&mut self, other: &Raster<U>, mut merge_fn: F) {
         if let Some(intersection) = self.rectangle.intersection(other.rectangle()) {
             for (x, y) in intersection.index_iter() {
-                self.set(x, y, merge_fn(self.get(x, y), other.get(x, y)));
+                let index = self.rectangle.linear_index(x, y);
+                let element = &mut self.elements[index];
+                *element = merge_fn(*element, other.get(x, y));
             }
         }
     }
